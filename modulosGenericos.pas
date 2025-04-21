@@ -2,6 +2,7 @@ program generico;
 const
     valorAlto = 9999;
     corte = -1;
+    dimF = 30;
 type
     registro = record
         //orden
@@ -15,6 +16,10 @@ type
     end;
 
     archivo = file of registro;
+
+    vecDetalle = array [1..30] of archivo;
+    vecReg = array [1..30] of registro;
+
 
 // procedimiento que lee un registro de un archivo X  
 procedure leer (var x : archivo; var R : registro);
@@ -53,10 +58,130 @@ begin
     end;
 end;
 
-//actualizacion del maestro con N detalles 
+
+//{{{}}}
+
+
+
+//asumimos que se quiere insertar un registro a un vector X
+procedure inserOrd (var v : vecReg; var dl : integer; elem : registro);
+var
+    i,pos : integer;
+begin
+   //busco la posicion a insertar
+    i := 1;
+    while (v[i] < elem.num) do
+     begin
+       i := i + 1;
+     end;
+    pos := i;
+    //inserto ordenado
+
+    for i:= dl downto pos do
+      begin
+        v[i+ i] := v[i];
+      end;
+    
+    v[pos] := elem;
+    dl := dl + 1;
+end;
+
+
+
+procedure cargarVecDet (var mae : archivo; var vecDet : vecDetalle);
+ var
+    i : integer;
+    ind : string;
+    nom : string;
+begin
+    // a todos los nombres logicos dentro del vector, les asigno un nombre fisico
+    nom := 'Detalle ';
+    for i := 1 to 30 do
+    begin
+        str(i,ind);
+        nom := nom + ind;
+        assign (vecDet[i],nom);
+        nom := nom - ind;
+    end;
+end;
+
+
+procedure CargarVecReg (var vecDet : vecDetalle; var vecR : vecReg; var dl : Integer);
+var
+    i : integer;
+    R : registro;
+    cant : integer;
+    ultimo : Boolean;
+begin
+    ultimo := False;
+    dl := 0;
+    // ahora deberia "leer" cada registro
+    // en realidad, leo los 30 primeros registros de los detalle
+    for i := 1 to 30 do
+      begin
+        leer(vecDet[i],R);
+        insertOrd(vecR,dl,R);
+        
+      end;
+end;
+
+
+procedure actualizacion3 (var mae : maestro);
+var
+    dimL : integer;
+    vecDet : vecDetalle;
+    vecR : vecReg;
+    R : registro;
+    regM : registro;
+begin
+    dimL := 0;
+    cargarVecDet(mae,vecDet);
+
+    reset(mae);
+    for i := 1 to dimf do
+      reset(vecDet[i]);
+
+    i := 1;
+
+    CargarVecReg(vecDet,vecReg,dimL);
+    
+    while vecR[i].num <> valorAlto do
+      begin
+        read(mae,regM);
+        while (regM.num <> vecR[i].num) do
+          read(mae,regM);
+        
+        
+        
+        while (regM.num = vecR[i].num) do
+          begin
+            if (dimL <= dimF) then
+               begin
+                 regM.cant := regM.cant - vecR[i].cant; 
+                 i := i + 1;
+               end
+            else  
+                CargarVecReg(vecDet,vecR,dimL);
+          end;  
+          
+      end;
+
+
+
+    close(mae);
+    for i := 1 to dimf do
+      close(vecDet[i]);
+
+end;
+
+
+//{{}{}}
+
+//actualizacion del maestro con N detalles (teniendo en cuenta que N es un numero "chico") 
 //en el ejemplo se usan 3, pero el algoritmo en general vale para mas
 procedure actualizacion2 (var mae : archivo; 
-                          var det1 : archivo; var det2 : archivo; 
+                          var det1 : archivo; 
+                          var det2 : archivo; 
                           var det3 : archivo);
 var
     // variables para guardar los registros del detalle
@@ -75,7 +200,11 @@ begin
             read(mae,regm);
         while (regm.num = min.num) do 
         begin
+
+            // aca es donde se suma o resta la cantidad de lo que se quiera procesar 
+            // (se resta el stock, se suma la cantidad de X cosa, etc)
             regm.cant:=regm.cant - min.cant;
+            
             minimo(regd1, regd2, regd3, min,det1,det2,det3);
         end;
     seek (mae, filepos(mae)-1);

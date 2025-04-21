@@ -64,11 +64,11 @@ begin
 end;
 
 procedure impMae (var mae : maestro);
-    function impProv (p : prov): string
+    function impProv (p : provincia): string;
     begin
       impProv := 
            'Nombre : ' + p.nombre 
-       + ' | Cantidad de alfabrtizados: ' + p.cantAlf 
+       + ' | Cantidad de alfabrtizados: ' + str(p.cantAlf) 
        + ' | Cantidad de encuestados: '   + p.cantEnc;
     end;
     procedure leer (var mae : maestro; p : provincia);
@@ -121,8 +121,6 @@ begin
 end;
 
 
-
-
 var
 
     opcion : char;
@@ -132,12 +130,26 @@ var
 begin
     WriteLn('Menu debug de practica 2 punto 3');
     WriteLn('1 = crear e imptimir Maestro');
-    Writeln('2 = crear e imprimir Detalle');
+    Writeln('2 = crear e imprimir ambos Detalles');
 
     readln(opcion);
 
     case opcion of
+        1: begin
+            Assign(mae,'Maestro');
+            cargarMae(mae);
+        end;
 
-
-  
+        2: begin
+           Assign(det,'Detalle1');
+           cargarDet(det);
+           
+           writeln();
+           WriteLn('SEGUNDO DETALLE');
+           WriteLn();
+           
+           Assign(det,'Detalle 2');
+           cargarDet(det);
+        end;
+    end;
 end.
