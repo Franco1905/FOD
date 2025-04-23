@@ -31,7 +31,7 @@ begin
 end;
 
 
-procedure minimo (var R1 : registro; 
+procedure minimo1 (var R1 : registro; 
                   var R2: registro; 
                   var R3: registro; var Min:registro;
                   var Det1 : archivo;
@@ -59,9 +59,6 @@ begin
 end;
 
 
-//{{{}}}
-
-
 
 //asumimos que se quiere insertar un registro a un vector X
 procedure inserOrd (var v : vecReg; var dl : integer; elem : registro);
@@ -86,9 +83,9 @@ begin
     dl := dl + 1;
 end;
 
+//{{{}}}
 
-
-procedure cargarVecDet (var mae : archivo; var vecDet : vecDetalle);
+procedure cargarVecDet (var vecDet : vecDetalle);
  var
     i : integer;
     ind : string;
@@ -106,22 +103,18 @@ begin
 end;
 
 
-procedure CargarVecReg (var vecDet : vecDetalle; var vecR : vecReg; var dl : Integer);
+procedure CargarVecReg (var vecDet : vecDetalle; var vecR : vecReg);
 var
     i : integer;
     R : registro;
     cant : integer;
-    ultimo : Boolean;
 begin
-    ultimo := False;
     dl := 0;
     // ahora deberia "leer" cada registro
     // en realidad, leo los 30 primeros registros de los detalle
     for i := 1 to 30 do
       begin
-        leer(vecDet[i],R);
-        insertOrd(vecR,dl,R);
-        
+        leer(vecDet[i],vecR[i]);
       end;
 end;
 
@@ -131,51 +124,73 @@ var
     dimL : integer;
     vecDet : vecDetalle;
     vecR : vecReg;
-    R : registro;
+    min : registro;
     regM : registro;
 begin
     dimL := 0;
     cargarVecDet(mae,vecDet);
 
     reset(mae);
+    
     for i := 1 to dimf do
       reset(vecDet[i]);
 
     i := 1;
 
-    CargarVecReg(vecDet,vecReg,dimL);
-    
-    while vecR[i].num <> valorAlto do
-      begin
-        read(mae,regM);
-        while (regM.num <> vecR[i].num) do
-          read(mae,regM);
-        
-        
-        
-        while (regM.num = vecR[i].num) do
-          begin
-            if (dimL <= dimF) then
-               begin
-                 regM.cant := regM.cant - vecR[i].cant; 
-                 i := i + 1;
-               end
-            else  
-                CargarVecReg(vecDet,vecR,dimL);
-          end;  
-          
-      end;
 
+    leer(mae,regM);
 
+    CargarVecReg(vecDet,vecReg);
+    minimo(vecDet,vecR,min);
+
+    while (min.num <> regM.num) do
+      leer(mae,regM);
+
+    while (min.num <> valorAlto) do
+    begin
+      
+      while (min.num = regM.num) and (min.num <> valorAlto) do
+        begin
+          regM.cant := regM.cant - min.cant;
+          minimo2(vecDet,vecR,min);
+        end;
+
+      seek (mae,FilePos(mae)-1);
+      write(mae,regM);
+    end;
 
     close(mae);
     for i := 1 to dimf do
       close(vecDet[i]);
+end;
 
+//{{}{}}
+
+
+
+
+
+procedure minimo2 (vd : vectorDetalle; vr : vectorReg; var minimo: registro);
+var
+  pos:integer
+begin
+  //inicializamos el minimo
+  minimo.cod := valorAlto;
+  
+  for i := 1 to dimF do begin
+    if vr[i].cod < minimo.cod then begin
+      minimo := vr[i];
+      pos := i;
+    end;
+  end;
+  if minimo.cod <> valorAlto then
+    leer(vd[pos], vr[pos]);
 end;
 
 
-//{{}{}}
+///////////
+
+
 
 //actualizacion del maestro con N detalles (teniendo en cuenta que N es un numero "chico") 
 //en el ejemplo se usan 3, pero el algoritmo en general vale para mas
@@ -213,6 +228,8 @@ begin
 
     close(det1); close(det2); close(det3); close(mae);
 end;
+
+
 
 
 // actualizacion del maestro para 1 archivo detalle
