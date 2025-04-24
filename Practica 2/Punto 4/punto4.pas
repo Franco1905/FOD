@@ -1,5 +1,4 @@
 
-
 {
 Se cuenta con un archivo de productos de una cadena de venta de alimentos congelados.
 De cada producto se almacena: 
@@ -23,7 +22,9 @@ Además, se deberá informar en un archivo de texto:
 *nombre de producto
 *descripción
 *stock disponible 
-*precio de aquellos productos que tengan stock disponible por debajo del stock mínimo
+*precio 
+
+de aquellos productos que tengan stock disponible por debajo del stock mínimo
 
 Pensar alternativas sobre realizar el informe en el mismo
 procedimiento de actualización, o realizarlo en un procedimiento separado 
@@ -34,145 +35,141 @@ puede venir 0 o N registros de un determinado producto.
 
 }
 
-program practica2_4;
-const
-    valorAlto = 'ZZZZZZZZZZ';
-type
-    producto = record
-        cod : string[10];
-        nom : string[20];
-        des : string;
-        dispStock : integer;
-        minStock : integer;
-        precio : real;
-    end;
+Program practica2_4;
 
-    venta = record
-        cod : string[10];
-        // cantidad vendida
-        cant : integer;
-    end;
+Const 
+  valorAlto =   'ZZZZZZZZZZ';
 
-    maestro = file of producto;
-    detalle = file of venta;
+Type 
+  producto =   Record
+    cod :   string[10];
+    nom :   string[20];
+    des :   string;
+    dispStock :   integer;
+    minStock :   integer;
+    precio :   real;
+  End;
 
-    vecReg = array [1..30] of venta;
-    vecDet = array [1..30] of detalle;
+  venta =   Record
+    cod :   string[10];
+    // cantidad vendida
+    cant :   integer;
+  End;
 
-procedure inserOrd (var v : vecReg; var dl : integer; elem : registro);
-var
-    i,pos : integer;
-begin
-   //busco la posicion a insertar
-    i := 1;
-    while (v[i] < elem.num) do
-     begin
-       i := i + 1;
-     end;
-    pos := i;
-    //inserto ordenado
+  maestro =   file Of producto;
+  detalle =   file Of venta;
 
-    for i:= dl downto pos do
-      begin
-        v[i+ i] := v[i];
-      end;
-    
-    v[pos] := elem;
-    dl := dl + 1;
-end;
+  vecReg =   array [1..30] Of venta;
+  vecDetalle =   array [1..30] Of detalle;
 
 
 
-procedure cargarVecDet (var mae : archivo; var vecDet : vecDetalle);
- var
-    i : integer;
-    ind : string;
-    nom : string;
-begin
-    // a todos los nombres logicos dentro del vector, les asigno un nombre fisico
-    nom := 'Detalle ';
-    for i := 1 to 30 do
-    begin
-        str(i,ind);
-        nom := nom + ind;
-        assign (vecDet[i],nom);
-        nom := nom - ind;
-    end;
-end;
+Procedure actualizacion3 (Var mae : maestro);
+
+Procedure cargarVecDet (Var vecDet : vecDetalle);
+
+Var 
+  i :   integer;
+  ind :   string;
+  nom :   string;
+Begin
+
+  // a todos los nombres logicos dentro del vector, les asigno un nombre fisico
+  nom := 'Detalle ';
+  For i := 1 To 30 Do
+    Begin
+      str(i,ind);
+      nom := nom + ind;
+      assign (vecDet[i],nom);
+      nom := nom - ind;
+    End;
+End;
 
 
-procedure CargarVecReg (var vecDet : vecDetalle; var vecR : vecReg; var dl : Integer);
-var
-    i : integer;
-    R : registro;
-    cant : integer;
-    ultimo : Boolean;
-begin
-    ultimo := False;
-    dl := 0;
-    // ahora deberia "leer" cada registro
-    // en realidad, leo los 30 primeros registros de los detalle
-    for i := 1 to 30 do
-      begin
-        leer(vecDet[i],R);
-        if (R.num <> valorAlto) then
-          insertOrd(vecR,dl,R);
-      end;
-end;
+Procedure CargarVecReg (Var vecDet : vecDetalle; Var vecR : vecReg);
 
-
-procedure actualizacion3 (var mae : maestro);
-var
-    dimL : integer;
-    vecDet : vecDetalle;
-    vecR : vecReg;
-    R : registro;
-    regM : registro;
-begin
-    dimL := 0;
-    cargarVecDet(mae,vecDet);
-
-    reset(mae);
-    
-    for i := 1 to dimf do
-      reset(vecDet[i]);
-
-    i := 1;
-
-    CargarVecReg(vecDet,vecReg,dimL);
-    
-    while vecR[i].num <> valorAlto do
-      begin
-        read(mae,regM);
-        while (regM.num <> vecR[i].num) do
-          read(mae,regM);
-      
-        while (regM.num = vecR[i].num) do
-          begin
-            if (i <= dimL) then
-               begin
-                 regM.cant := regM.cant - vecR[i].cant; 
-                 i := i + 1;
-               end
-            else  
-                CargarVecReg(vecDet,vecR,dimL);
-          end;  
-        seek(mae,FilePos(mae)-1);
-        Write(mae,regM);
-      end;
-
-    close(mae);
-    for i := 1 to dimf do
-      close(vecDet[i]);
-end;
+Var 
+  i :   integer;
+Begin
+  dl := 0;
+  // ahora deberia "leer" cada registro
+  // en realidad, leo los 30 primeros registros de los detalle
+  For i := 1 To 30 Do
+    Begin
+      leer(vecDet[i],vecR[i]);
+    End;
+End;
 
 
 
 
+Procedure minimo2 (vd : vectorDetalle; vr : vectorReg; Var minimo: venta);
+
+Var 
+  pos:   integer
+       Begin
+         //inicializamos el minimo
+         minimo.cod := valorAlto;
+
+         For i := 1 To dimF Do
+           Begin
+             If vr[i].cod < minimo.cod Then
+               Begin
+                 minimo := vr[i];
+                 pos := i;
+               End;
+           End;
+         If minimo.cod <> valorAlto Then
+           leer(vd[pos], vr[pos]);
+       End;
+
+Var 
+  dimL :   integer;
+  vecDet :   vecDetalle;
+  vecR :   vecReg;
+  min :   venta;
+  regM :   producto;
+Begin
+  dimL := 0;
+  cargarVecDet(mae,vecDet);
+
+  reset(mae);
+
+  For i := 1 To dimf Do
+    reset(vecDet[i]);
+
+  i := 1;
+
+
+  leer(mae,regM);
+
+  CargarVecReg(vecDet,vecReg);
+  minimo(vecDet,vecR,min);
+
+  While (min.num <> regM.num) Do
+    leer(mae,regM);
+
+  While (min.num <> valorAlto) Do
+    Begin
+
+      While (min.num = regM.num) And (min.num <> valorAlto) Do
+        Begin
+          regM.dispStock := regM.dispStock - min.cant;
+          minimo2(vecDet,vecR,min);
+        End;
+
+      seek (mae,FilePos(mae)-1);
+      write(mae,regM);
+    End;
+
+  close(mae);
+  For i := 1 To dimf Do
+    close(vecDet[i]);
+End;
 
 
 
 
-begin
+Begin
 
-end.
+End.
