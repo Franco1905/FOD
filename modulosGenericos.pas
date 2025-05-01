@@ -28,6 +28,8 @@ Procedure leer (Var x : archivo; Var R : registro);
 
 
 
+
+
 {
 lee un registro de un archivo, si el archivo no tiene mas elementos, devuelve "valoralto"
 }
@@ -104,9 +106,6 @@ End;
 Procedure cargarArch (Var X : archivo);
 
 
-
-
-
 {
 Carga los datos ingresados desde teclado a un registro, y luego carga ese registro a un archivo
 }
@@ -161,6 +160,8 @@ Begin
     End;
   Close(X);
 End;
+
+
 
 
 
@@ -251,11 +252,15 @@ Procedure cargarTxt2 (R : registro; Var txt : Text);
 
 
 
+
+
 {
   Exporta el contenido de un archivo binario a un archivo de texto DURANTE
   un proceso de actualizacion
 }
 Begin
+
+
 
 
 // Fuera del modulo, se debe hacer el "rewrite" del archivo txt, desligando esta funcion a lo que este por arriba

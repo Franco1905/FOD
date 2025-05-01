@@ -26,7 +26,6 @@ Type
 
 Procedure leer (Var x : archivo; Var R : registro);
 
-
 {
 lee un registro de un archivo, si el archivo no tiene mas elementos, devuelve "valoralto"
 }
@@ -111,6 +110,7 @@ Begin
         read(mae,regm);
       While (regm.num = min.num) Do
         Begin
+
 
 
 
