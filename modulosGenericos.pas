@@ -24,21 +24,12 @@ Type
   vecReg =   array [1..30] Of registro;
 
 
-Procedure leer (Var x : archivo; Var R : registro);
-
-
 
 
 
 {
 lee un registro de un archivo, si el archivo no tiene mas elementos, devuelve "valoralto"
 }
-Begin
-  If Eof(X) Then
-    R.num := valorAlto
-  Else
-    read(X,R)
-End;
 
 
 Procedure minimo1 (Var R1 : registro;
@@ -106,6 +97,13 @@ End;
 Procedure cargarArch (Var X : archivo);
 
 
+
+
+
+
+
+
+
 {
 Carga los datos ingresados desde teclado a un registro, y luego carga ese registro a un archivo
 }
@@ -160,6 +158,8 @@ Begin
     End;
   Close(X);
 End;
+
+
 
 
 
@@ -248,7 +248,7 @@ Begin
   Close(arch);
 End;
 
-Procedure cargarTxt2 (R : registro; Var txt : Text);
+
 
 
 
@@ -258,7 +258,10 @@ Procedure cargarTxt2 (R : registro; Var txt : Text);
   Exporta el contenido de un archivo binario a un archivo de texto DURANTE
   un proceso de actualizacion
 }
+
+Procedure cargarTxt2 (R : registro; Var txt : Text);
 Begin
+
 
 
 
@@ -266,14 +269,15 @@ Begin
 // Fuera del modulo, se debe hacer el "rewrite" del archivo txt, desligando esta funcion a lo que este por arriba
   WriteLn(txt,R.num,' ',R.cant,' ',R.ord1,
           ' ',R.monto,' ',R.vendedor);
-
-
 End;
 
-Procedure cargarBin (Var arch : archivo; Var txt : Text);
+
+
 {
 Importa el contenido de un archivo de texto a un archivo binario
 }
+Procedure cargarBin (Var arch : archivo; Var txt : Text);
+
 
 Var 
 
@@ -317,6 +321,116 @@ Begin
     End;
 
 End;
+
+
+Procedure minimoCorte (vd : vecDetalle;Var vr : vecReg; Var minimo: log);
+{Procedure minimo, para un corte de control de 2 claves}
+
+Var 
+  pos:   integer;
+  i : integer;
+Begin
+  //inicializamos el minimo
+  minimo.cod_usuario := valorAlto;
+
+  For i := 1 To dimF Do
+    Begin
+      If (vr[i].cod_usuario < minimo.cod_usuario) Then
+        Begin
+          minimo := vr[i];
+          pos := i;
+        End
+      Else
+        Begin
+          If (vr[i].cod_usuario = minimo.cod_usuario) Then
+            Begin
+              If (vr[i].fecha < minimo.fecha) Then
+                Begin
+                  minimo := vr[i];
+                  pos := i;
+                End;
+            End;
+          por
+        End;
+    End;
+  If minimo.cod_usuario <> valorAlto Then
+    Begin
+      leer(vd[pos], vr[pos]);
+    End;
+End;
+
+
+
+Procedure corteControlMerge (Var mae: maestro;Var vecDet : vecDetalle);
+// corte control ideal para merge
+
+Var 
+  min:   log;
+  regM:   usuario;
+  vecR:   vecReg;
+  i : integer;
+  clN1, clN2:  string;
+  // clN = Clave nivel 1, 2, 3, etc
+  // totN = valor que se este acumulando
+Begin
+  Rewrite(mae);
+
+  For i := 1 To dimF Do
+    Begin
+      Reset(vecDet[i]);
+    End;
+
+  // valor que se acumula: tiempo_sesion.
+  // reg = registro maestro
+
+  CargarVecReg(vecDet,vecR);
+
+  minimo2(vecDet,vecR,min);
+
+  While (min.cod_usuario <> valorAlto) Do
+    Begin
+      //writeln('Clave Nivel 1:', reg.ord1);
+
+      // guardo clave actual
+      clN1 := min.cod_usuario;
+
+      //inicio el registro maestro
+
+      While (clN1 = min.cod_usuario) Do
+        Begin
+          //writeln('Clave Nivel 2:', reg.ord2);
+          clN2 := min.fecha;
+
+          regM.cod_usuario := min.cod_usuario;
+          regM.fecha := min.fecha;
+          regM.tiempo_total := 0;
+
+          While (clN2 = min.fecha) And (clN1 = min.cod_usuario) Do
+            Begin
+              //sumo al tiempo total el tiempo del archivo detalle
+              regM.tiempo_total := regM.tiempo_total + min.tiempo_session;
+              // Busco el siguiente registro en el detalle
+              minimo2(vecDet,vecR,min);
+            End;
+
+
+{ una vez se cambio de fecha (no necesariamente de usuario), ya se puede asumir que sera otro registro del maestro}
+          write(mae,regM);
+        End;
+
+    End;
+  For i := 1 To dimF Do
+    Begin
+      close(vecDet[i]);
+    End;
+
+  close(mae);
+End;
+
+
+
+
+//////////////////////////
 Begin
   writeln('Fin del programa');
 End.

@@ -4,26 +4,79 @@ Program ej5;
 Const 
   valorAlto = 'ZZZZZZZ';
   dimF = 5;
+  corte = '-1';
 
 Type 
 
   log = Record
     cod_usuario : string;
     fecha : string;
-    tiempo_session : string;
+    tiempo_session : integer;
   End;
 
   usuario = Record
     cod_usuario : string;
     fecha : string;
-    tiempo_total : string;
+    tiempo_total : integer;
   End;
 
   detalle = file Of log;
   maestro = file Of usuario;
 
   vecDetalle = Array [1..dimF] Of detalle;
-  vegReg = Array [1..dimF] Of log;
+  vecReg = Array [1..dimF] Of log;
+
+
+Procedure leer (Var x : detalle; Var R : log);
+
+
+
+
+{
+lee un registro de un archivo, si el archivo no tiene mas elementos, devuelve "valoralto"
+}
+Begin
+  If Eof(X) Then
+    R.cod_usuario := valorAlto
+  Else
+    read(X,R)
+End;
+
+Procedure cargarArchDet (Var X : detalle);
+
+
+
+
+{
+Carga los datos ingresados desde teclado a un registro, y luego carga ese registro a un archivo
+}
+Procedure leerReg (Var R : log);
+Begin
+  write('Cod usuario: ');
+  readln(R.cod_usuario);
+  If (R.cod_usuario <> corte) Then
+    Begin
+      // leo los demas datos 
+      write('Fecha: ');
+      ReadLn(R.fecha);
+      Write('Tiempo de sesion en el dia: ');
+      ReadLn(R.tiempo_session);
+    End;
+End;
+
+Var 
+  R :   log;
+Begin
+  Rewrite(X);
+  leerReg(R);
+  While (R.cod_usuario <> corte) Do
+    Begin
+      write(X,R);
+      leerReg(R);
+    End;
+  Close(X);
+End;
+
 
 Procedure cargarVecDet (Var vecDet : vecDetalle);
 
@@ -34,18 +87,15 @@ Var
 Begin
 
   // a todos los nombres logicos dentro del vector, les asigno un nombre fisico
+  // e inicializo sus registros
   nom := 'detalle';
   For i := 1 To dimF Do
     Begin
       str(i,ind);
       nom := nom + ind + '.dat';
-      If fileExists(nom) Then
-        Begin
-          assign (vecDet[i],nom);
-          //writeln('intentando asignar detalle: ',i,' (',nom,')');
-        End
-      Else
-        writeln(nom,'no existe o esta vacio');
+      assign (vecDet[i],nom);
+      writeln('Cargando datos del detalle numero: ',i);
+      cargarArchDet(vecDet[i]);
       nom := 'detalle';
     End;
 End;
@@ -104,15 +154,14 @@ End;
 
 
 
-Procedure corteControl(Var mae: maestro);
+Procedure corteControl(Var mae: maestro;Var vecDet : vecDetalle);
 
 Var 
-  totG:   real;
-  regDet:   log;
-  min,regM:   usuario;
-  vecDet:   vecDetalle;
-  vecR:   vegReg;
-  clN1, clN2:   integer;
+  min:   log;
+  regM:   usuario;
+  vecR:   vecReg;
+  i : integer;
+  clN1, clN2:  string;
   // clN = Clave nivel 1, 2, 3, etc
   // totN = valor que se este acumulando
 Begin
@@ -126,7 +175,6 @@ Begin
   // valor que se acumula: tiempo_sesion.
   // reg = registro maestro
 
-  cargarVecDet(vecDet);
   CargarVecReg(vecDet,vecR);
 
   minimo2(vecDet,vecR,min);
@@ -152,11 +200,10 @@ Begin
           While (clN2 = min.fecha) And (clN1 = min.cod_usuario) Do
             Begin
               //sumo al tiempo total el tiempo del archivo detalle
-              regM.tiempo_total := regM.tiempo_total + min.tiempo_total;
+              regM.tiempo_total := regM.tiempo_total + min.tiempo_session;
               // Busco el siguiente registro en el detalle
               minimo2(vecDet,vecR,min);
             End;
-
 
 { una vez se cambio de fecha (no necesariamente de usuario), ya se puede asumir que sera otro registro del maestro}
           write(mae,regM);
@@ -171,11 +218,16 @@ Begin
   close(mae);
 End;
 
+Var 
+  mae : maestro;
+  vecDet : vecDetalle;
 Begin
-
-
-
+  Assign(mae,'var/log/Maestro.dat');
+  cargarVecDet(vecDet);
+  corteControl(mae,vecDet);
 End.
+
+
 
 
 
