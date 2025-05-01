@@ -28,7 +28,6 @@ Procedure leer (Var x : archivo; Var R : registro);
 
 
 
-
 {
 lee un registro de un archivo, si el archivo no tiene mas elementos, devuelve "valoralto"
 }
@@ -102,226 +101,8 @@ End;
 
 //{{{}}}
 
-
-Procedure actualizacion3 (Var mae : archivo);
-
-{
-Actualiza el archivo maestro en base a 30 archivos detalle
-}
-
-Procedure cargarVecDet (Var vecDet : vecDetalle);
-
-
-
-
-
-{
-Carga un vector de DimF = 30 con 30 nombres logicos para los archivos detalle
-}
-
-Var 
-  i :   integer;
-  ind :   string;
-  nom :   string;
-Begin
-
-  // a todos los nombres logicos dentro del vector, les asigno un nombre fisico
-  For i := 1 To 30 Do
-    Begin
-      nom := 'Detalle ';
-      str(i,ind);
-      nom := nom + ind;
-      assign (vecDet[i],nom);
-    End;
-End;
-
-
-Procedure CargarVecReg (Var vecDet : vecDetalle; Var vecR : vecReg);
-
-
-
-
-{
-Carga el vector con los 30 primeros registros de cada uno de los 30 archivos detalle
-}
-
-Var 
-  i :   integer;
-Begin
-  // ahora deberia "leer" cada registro
-  // en realidad, leo los 30 primeros registros de los detalle
-  For i := 1 To 30 Do
-    Begin
-      leer(vecDet[i],vecR[i]);
-    End;
-End;
-
-
-
-
-Procedure minimo2 (vd : vecDetalle; vr : vecReg; Var minimo: registro);
-{
-busca el minimo entre los 30  primeros registros de los 30 archivos detalle
-}
-
-Var 
-  pos:   integer;
-Begin
-  //inicializamos el minimo
-  minimo.cod := valorAlto;
-
-  For i := 1 To dimF Do
-    Begin
-      If vr[i].cod < minimo.cod Then
-        Begin
-          minimo := vr[i];
-          pos := i;
-        End;
-    End;
-  If minimo.cod <> valorAlto Then
-    leer(vd[pos], vr[pos]);
-End;
-
-Var 
-  dimL :   integer;
-  vecDet :   vecDetalle;
-  vecR :   vecReg;
-  min :   registro;
-  regM :   registro;
-Begin
-  dimL := 0;
-  cargarVecDet(mae,vecDet);
-
-  reset(mae);
-
-  For i := 1 To dimf Do
-    reset(vecDet[i]);
-
-  i := 1;
-
-
-  leer(mae,regM);
-
-  CargarVecReg(vecDet,vecReg);
-  minimo(vecDet,vecR,min);
-
-  While (min.num <> regM.num) Do
-    leer(mae,regM);
-
-  While (min.num <> valorAlto) Do
-    Begin
-
-      While (min.num = regM.num) And (min.num <> valorAlto) Do
-        Begin
-          regM.cant := regM.cant - min.cant;
-          minimo2(vecDet,vecR,min);
-        End;
-
-      seek (mae,FilePos(mae)-1);
-      write(mae,regM);
-    End;
-
-  close(mae);
-  For i := 1 To dimf Do
-    close(vecDet[i]);
-End;
-
-Procedure actualizacion2 (Var mae : archivo;
-                          Var det1 : archivo;
-                          Var det2 : archivo;
-                          Var det3 : archivo);
-{
-Actualiza un archivo maestro en base a 3 archivos detalle
-}
-
-Var 
-  // variables para guardar los registros del detalle
-  RegD1,RegD2,RegD3 :   registro;
-  RegM :   registro;
-  min :   registro;
-Begin
-  Reset(det1);
-  Reset (det2);
-  Reset(det3);
-  Reset(mae);
-
-  leer(det1, RegD1);
-  leer(det2, RegD2);
-  leer(det3, RegD3);
-  minimo(regd1, regd2, regd3, min, det1, det2, det3);
-  While (min.num <> valoralto) Do
-    Begin
-      read(mae,regm);
-      While (regm.num <> min.num) Do
-        read(mae,regm);
-      While (regm.num = min.num) Do
-        Begin
-
-
-
-
-       // aca es donde se suma o resta la cantidad de lo que se quiera procesar 
-          // (se resta el stock, se suma la cantidad de X cosa, etc)
-          regm.cant := regm.cant - min.cant;
-
-          minimo(regd1, regd2, regd3, min,det1,det2,det3);
-        End;
-      seek (mae, filepos(mae)-1);
-      write(mae,regm);
-    End;
-
-  close(det1);
-  close(det2);
-  close(det3);
-  close(mae);
-End;
-
-
-
-
-// actualizacion del maestro para 1 archivo detalle
-Procedure actualizacion1 (Var det:archivo;Var mae : archivo);
-{
- Actualiza un archivo maestro en base a UN archivo detalle
-}
-
-Var 
-  RegM :   registro;
-  RegD :   registro;
-  cod_actual :   Real;
-  tot_vendido :   integer;
-Begin
-  reset(mae);
-  reset (det);
-  While Not(EOF(det)) Do
-    Begin
-      read(mae, RegM);
-      // Lectura archivo maestro
-      read(det, RegD);
-      // Lectura archivo detalle
-     {Se busca en el maestro el producto del detalle}
-      While (RegM.num <> RegD.num) Do
-        read(mae, regm);
-        {Se totaliza la cantidad vendida del detalle}
-      cod_actual := regd.num;
-      tot_vendido := 0;
-      While (regd.num = cod_actual) Do
-        Begin
-          tot_vendido := tot_vendido+regd.cant;
-          read(det, regd);
-        End;
-        {Se actualiza la cantidad}
-      regm.cant := regm.cant - tot_vendido;
-        {se reubica el puntero en el maestro}
-      seek(mae, filepos(mae)-1);
-        {se actualiza el maestro}
-      write(mae, regm);
-    End;
-  close (mae);
-  close (det);
-End;
-
 Procedure cargarArch (Var X : archivo);
+
 
 
 
@@ -375,11 +156,11 @@ Begin
   While (R.num <> valorAlto) Do
     Begin
       impReg(R);
+      leer(vecDet[i],vecR[i]);
       leer(X,R);
     End;
   Close(X);
 End;
-
 
 
 
@@ -452,7 +233,6 @@ Procedure cargarTxt (Var arch : archivo;Var txt : Text);
 }
 
 Var 
-  nomArch : string;
   R : registro;
 Begin
   Reset(arch);
@@ -460,13 +240,35 @@ Begin
   While (Not eof(arch)) Do
     Begin
       Read(arch, R); {lee votos del arch binario}
-      WriteLn(txt,carga,R.num,' ',R.cant,' ',R.ord1,
+      WriteLn(txt,R.num,' ',R.cant,' ',R.ord1,
               ' ',R.monto,' ',R.vendedor);
     {escribe en el archivo texto los campos separados por el carácter blanco}
     End;
   Close(arch);
 End;
+
+Procedure cargarTxt2 (R : registro; Var txt : Text);
+
+
+
+{
+  Exporta el contenido de un archivo binario a un archivo de texto DURANTE
+  un proceso de actualizacion
+}
+Begin
+
+
+// Fuera del modulo, se debe hacer el "rewrite" del archivo txt, desligando esta funcion a lo que este por arriba
+  WriteLn(txt,R.num,' ',R.cant,' ',R.ord1,
+          ' ',R.monto,' ',R.vendedor);
+
+
+End;
+
 Procedure cargarBin (Var arch : archivo; Var txt : Text);
+{
+Importa el contenido de un archivo de texto a un archivo binario
+}
 
 Var 
 
@@ -486,6 +288,30 @@ Begin
   Close(txt);
 End;
 
+Procedure merge (Var arch : archivo)
+
+Var 
+  total : integer;
+  vecR : vecReg;
+Begin
+
+  minimo1(detalle,min);
+
+  While (min.codigo <> valoralto) Do
+    Begin
+      aux := min;
+      total := 0;
+      While (min.codigo = aux.codigo) Do
+        Begin
+          total := total + min.cant;
+          minimo (det1, det2, det3,
+                  regd1, regd2, regd3, min);
+        End;
+      aux.cant := total;
+      write (mae, aux);
+    End;
+
+End;
 Begin
   writeln('Fin del programa');
 End.

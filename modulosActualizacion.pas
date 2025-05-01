@@ -1,98 +1,137 @@
 
-
-
-
-
-
-
-
-
-{
-Se cuenta con un archivo de productos de una cadena de venta de alimentos congelados.
-De cada producto se almacena: 
-
-*código del producto 
-*nombre
-*descripción 
-*stock disponible
-*stock mínimo 
-*precio del producto
-
-Se recibe diariamente un archivo detalle de cada una de las 30 sucursales de la cadena. Se
-debe realizar el procedimiento que recibe los 30 detalles y actualiza el stock del archivo
-maestro. La información que se recibe en los detalles es: 
-
-*código de producto 
-*cantidad vendida. 
-
-Además, se deberá informar en un archivo de texto: 
-
-*nombre de producto
-*descripción
-*stock disponible 
-*precio 
-
-de aquellos productos que tengan stock disponible por debajo del stock mínimo
-
-Pensar alternativas sobre realizar el informe en el mismo
-procedimiento de actualización, o realizarlo en un procedimiento separado 
-(analizar ventajas/desventajas en cada caso).
-
-Nota: todos los archivos se encuentran ordenados por código de productos. En cada detalle
-puede venir 0 o N registros de un determinado producto.
-
-}
-
-Program practica2_4;
-
-Uses sysUtils;
+Program modulosActualizacion;
 
 Const 
-  valorAlto =   'ZZZZZZZZZZ';
+  valorAlto =   9999;
+  corte =   -1;
+  dimF =   30;
 
 Type 
-  producto =   Record
-    cod :   string[10];
-    nom :   string[20];
-    des :   string;
-    dispStock :   integer;
-    minStock :   integer;
-    precio :   real;
-  End;
-
-  venta =   Record
-    cod :   string[10];
-    // cantidad vendida
+  registro =   Record
+    //orden
+    num :   real;
     cant :   integer;
+    ord1 :   integer;
+    ord2 :   integer;
+    ord3 :   integer;
+    monto :   real;
+    vendedor :   string;
   End;
 
-  maestro =   file Of producto;
-  detalle =   file Of venta;
+  archivo =   file Of registro;
 
-  vecReg =   array [1..30] Of venta;
-  vecDetalle =   array [1..30] Of detalle;
-
+  vecDetalle =   array [1..30] Of archivo;
+  vecReg =   array [1..30] Of registro;
 
 
-Procedure leer (Var x : detalle; Var R : venta);
-
-
-
-
-
-
-
+Procedure leer (Var x : archivo; Var R : registro);
 
 
 {
 lee un registro de un archivo, si el archivo no tiene mas elementos, devuelve "valoralto"
 }
 Begin
-  writeln('Entrando a leer');
   If Eof(X) Then
-    R.cod := valorAlto
+    R.num := valorAlto
   Else
     read(X,R)
+End;
+
+
+// actualizacion del maestro para 1 archivo detalle
+Procedure actualizacion1 (Var det:archivo;Var mae : archivo);
+{
+ Actualiza un archivo maestro en base a UN archivo detalle
+}
+
+Var 
+  RegM :   registro;
+  RegD :   registro;
+  cod_actual :   Real;
+  tot_vendido :   integer;
+Begin
+  reset(mae);
+  reset (det);
+  While Not(EOF(det)) Do
+    Begin
+      read(mae, RegM);
+      // Lectura archivo maestro
+      read(det, RegD);
+      // Lectura archivo detalle
+     {Se busca en el maestro el producto del detalle}
+      While (RegM.num <> RegD.num) Do
+        read(mae, regm);
+        {Se totaliza la cantidad vendida del detalle}
+      cod_actual := regd.num;
+      tot_vendido := 0;
+      While (regd.num = cod_actual) Do
+        Begin
+          tot_vendido := tot_vendido+regd.cant;
+          read(det, regd);
+        End;
+        {Se actualiza la cantidad}
+      regm.cant := regm.cant - tot_vendido;
+        {se reubica el puntero en el maestro}
+      seek(mae, filepos(mae)-1);
+        {se actualiza el maestro}
+      write(mae, regm);
+    End;
+  close (mae);
+  close (det);
+End;
+
+
+Procedure actualizacion2 (Var mae : archivo;
+                          Var det1 : archivo;
+                          Var det2 : archivo;
+                          Var det3 : archivo);
+{
+Actualiza un archivo maestro en base a 3 archivos detalle
+}
+
+Var 
+  // variables para guardar los registros del detalle
+  RegD1,RegD2,RegD3 :   registro;
+  RegM :   registro;
+  min :   registro;
+Begin
+  Reset(det1);
+  Reset (det2);
+  Reset(det3);
+  Reset(mae);
+
+  leer(det1, RegD1);
+  leer(det2, RegD2);
+  leer(det3, RegD3);
+  minimo(regd1, regd2, regd3, min, det1, det2, det3);
+  While (min.num <> valoralto) Do
+    Begin
+      read(mae,regm);
+      While (regm.num <> min.num) Do
+        read(mae,regm);
+      While (regm.num = min.num) Do
+        Begin
+
+
+
+
+
+
+
+       // aca es donde se suma o resta la cantidad de lo que se quiera procesar 
+          // (se resta el stock, se suma la cantidad de X cosa, etc)
+          regm.cant := regm.cant - min.cant;
+
+          minimo(regd1, regd2, regd3, min,det1,det2,det3);
+        End;
+      seek (mae, filepos(mae)-1);
+      write(mae,regm);
+    End;
+
+  close(det1);
+  close(det2);
+  close(det3);
+  close(mae);
 End;
 
 Procedure actualizacion3 (Var mae : maestro;Var txt : Text);
@@ -245,61 +284,3 @@ Begin
     close(vecDet[i]);
   close(txt);
 End;
-
-// fin del modulo actualizacion 3
-
-
-Procedure cargarTxt (Var arch : maestro;Var txt : Text);
-
-
-
-
-
-
-
-
-
-{
-  Exporta el contenido de un archivo binario a un archivo de texto
-  Despues de que este haya sido creado
-}
-
-Var 
-  R : producto;
-Begin
-  Reset(arch);
-  Rewrite (txt);{crea archivo de texto}
-  While (Not eof(arch)) Do
-    Begin
-      Read(arch, R); {lee datos del arch binario}
-      If (R.dispStock < R.minStock) Then
-        Begin
-
-
-
-
-
-
-
-
-
-     //escribe en el archivo texto los campos separados por el carácter blanco}
-          WriteLn(txt,R.nom);
-          WriteLn(txt,
-                  R.des,
-                  R.dispStock,
-                  R.precio);
-        End;
-    End;
-  Close(arch);
-End;
-
-Var 
-
-  mae : maestro;
-  texto : Text;
-Begin
-  Assign(mae,'maestro.dat');
-  Assign(texto,'minStock.txt');
-  actualizacion3(mae,texto);
-End.
