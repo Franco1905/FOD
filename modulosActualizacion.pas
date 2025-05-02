@@ -26,6 +26,7 @@ Type
 
 Procedure leer (Var x : archivo; Var R : registro);
 
+
 {
 lee un registro de un archivo, si el archivo no tiene mas elementos, devuelve "valoralto"
 }
@@ -118,6 +119,7 @@ Begin
 
 
 
+
        // aca es donde se suma o resta la cantidad de lo que se quiera procesar 
           // (se resta el stock, se suma la cantidad de X cosa, etc)
           regm.cant := regm.cant - min.cant;
@@ -138,7 +140,7 @@ Procedure actualizacion3 (Var mae : maestro;Var txt : Text);
 
 {s}
 
-Procedure cargarVecDet (Var vecDet : vecDetalle);
+Procedure assignVecDet (Var vecDet : vecDetalle);
 
 Var 
   i :   integer;

@@ -39,8 +39,11 @@ Type
   detalle = file Of regDet;
   maestro = file Of regMae;
 
+  vecReg = array [1..dimF] Of regDet;
+  vecDetalle = array [1..dimf] Of detalle;
 
-Procedure leer (Var x : maestro; Var R : regDet);
+
+Procedure leer (Var x : detalle; Var R : regDet);
 Begin
   If Eof(X) Then
     R.codLoc := valorAlto
@@ -50,12 +53,244 @@ End;
 
 
 
+Procedure minimoCorte (vd : vecDetalle;Var vr : vecReg; Var minimo: regDet);
+{Procedure minimo, para un corte de control de 2 claves}
 
+Var 
+  pos:   integer;
+  i : integer;
+Begin
+  //inicializamos el minimo
+  minimo.codLoc := valorAlto;
+
+  For i := 1 To dimF Do
+    Begin
+      If (vr[i].codLoc < minimo.codLoc) Or (vr[i].codLoc = minimo
+         .codLoc) And (vr[i].codCep < minimo.codCep)  Then
+        Begin
+          minimo := vr[i];
+          pos := i;
+        End;
+    End;
+  If minimo.codLoc <> valorAlto Then
+    Begin
+      leer(vd[pos], vr[pos]);
+    End;
+End;
+
+
+Procedure assignVecDet (Var vecDet : vecDetalle);
+
+Var 
+  i :   integer;
+  ind :   string;
+  nom :   string;
+Begin
+  // a todos los nombres logicos dentro del vector, les asigno un nombre fisico
+  nom := 'detalle';
+  For i := 1 To dimF Do
+    Begin
+      str(i,ind);
+      nom := nom + ind + '.dat';
+      assign (vecDet[i],nom);
+      //writeln('intentando asignar detalle: ',i,' (',nom,')');
+    End;
+End;
+
+
+Procedure CargarVecReg (Var vecDet : vecDetalle; Var vecR : vecReg);
+
+Var 
+  i :   integer;
+Begin
+  //writeln('Entrando CargarVecReg');
+  // ahora deberia "leer" cada registro
+  // en realidad, leo los 30 primeros registros de los detalle
+  For i := 1 To 30 Do
+    Begin
+      //writeln('Antes de leer detalle: ',i);
+      leer(vecDet[i],vecR[i]);
+    End;
+End;
+
+
+Procedure corteControl (Var mae: maestro;Var vecDet : vecDetalle);
+// corte control ideal para merge
+
+Var 
+  min:   regDet;
+  regM:   regMae;
+  vecR:   vecReg;
+  i,cant : integer;
+  clN1, clN2:  string;
+  ok : boolean;
+  // clN = Clave nivel 1, 2, 3, etc
+  // totN = valor que se este acumulando
+Begin
+  Reset(mae);
+  cant := 0;
+
+  For i := 1 To dimF Do
+    Begin
+      Reset(vecDet[i]);
+    End;
+  //valor que se acumula: fallecidos, recuperados, 
+  //el resto de valores se asignan directamente
+
+  CargarVecReg(vecDet,vecR);
+
+  minimoCorte(vecDet,vecR,min);
+
+  read(mae,regM);
+  While (min.codLoc <> valorAlto) Do
+    Begin
+
+      While (min.codLoc <> regM.codLoc) Do
+        Begin
+          Read(mae,regM);
+          If (regM.casAct > 50) Then
+            Begin
+              cant := cant + 1;
+              ok := True;
+            End
+          Else
+            ok := False;
+        End;
+
+      //writeln('Clave Nivel 1:', reg.ord1);
+
+      // guardo clave actual
+      clN1 := min.codLoc;
+      While (clN1 = min.codLoc) Do
+        Begin
+          //writeln('Clave Nivel 2:', reg.ord2);
+          clN2 := min.codCep;
+          While (clN2 = min.codCep) And (clN1 = min.codLoc) Do
+            Begin
+              //sumo al tiempo total el tiempo del archivo detalle
+              regM.casFall := regM.casFall + min.casFall;
+              regM.casRec := regM.casRec + min.casRec;
+              act :=  min.casAct;
+              nue :=  min.casNue;
+              // Busco el siguiente registro en el detalle
+              minimoCorte(vecDet,vecR,min);
+            End;
+
+
+
+{ una vez se cambio de fecha (no necesariamente de usuario), 
+          ya se puede asumir que sera otro registro del maestro}
+          If (ok = False) Then
+            cant := cant  + 1;
+          writeln('Cant = ',cant);
+          write(mae,regM);
+        End;
+
+    End;
+  For i := 1 To dimF Do
+    Begin
+      close(vecDet[i]);
+    End;
+
+  close(mae);
+End;
+
+Procedure cargarMae (Var X : maestro);
+Procedure leerReg (Var R : regMae);
+Begin
+  write('Codigo localidad: ');
+  readln(R.codLoc);
+  If (R.codLoc <> corte) Then
+    Begin
+      write('Nombre: ');
+      ReadLn(R.nomLoc);
+      write('Codigo de cepa: ');
+      ReadLn(R.codCep);
+      writeln('Inserte 1 si quiere agregar los demas datos a mano');
+      ReadLn(R.casAct);
+      If (R.casAct = 1) Then
+        Begin
+          write('Casos actuales: ');
+          ReadLn(R.casAct);
+          write('Casos nuevos: ');
+          ReadLn(R.casNue);
+          Write('Fallecidos: ');
+          ReadLn(R.casFall);
+          Write('Recuperados: ');
+          ReadLn(R.casRec);
+        End;
+    End;
+End;
+
+Var 
+  R :   regMae;
+Begin
+  Rewrite(X);
+  writeln('Cargando maestro: ');
+  leerReg(R);
+  While (R.codLoc <> corte) Do
+    Begin
+      write(X,R);
+      leerReg(R);
+    End;
+  close(X);
+End;
+
+
+Procedure cargarDet (Var X : vecDetalle);
+Procedure leerReg (Var R : regDet);
+Begin
+  write('Codigo localidad: ');
+  readln(R.codLoc);
+  If (R.codLoc <> corte) Then
+    Begin
+      write('Codigo de cepa: ');
+      ReadLn(R.codCep);
+      write('Casos actuales: ');
+      ReadLn(R.casAct);
+      write('Casos nuevos: ');
+      ReadLn(R.casNue);
+      Write('Fallecidos: ');
+      ReadLn(R.casFall);
+      Write('Recuperados: ');
+      ReadLn(R.casRec);
+    End;
+End;
+
+Var 
+  i : integer;
+  R :   regDet;
+Begin
+  For i := 1 To dimF Do
+    Begin
+      Rewrite(X[i]);
+      writeln('Cargando detalle numero: ',i);
+      leerReg(R);
+      While (R.codLoc <> corte) Do
+        Begin
+          write(x[i],R);
+          leerReg(R);
+        End;
+      close(X[i]);
+    End;
+End;
 
 //// Programa principal ///
-Begin
 
+Var 
+
+  vecDet : vecDetalle;
+  mae : maestro;
+Begin
+  Assign(mae,'Maestro');
+  cargarMae(mae);
+  assignVecDet(vecDet);
+  cargarDet(vecDet);
+  corteControl(mae,vecDet);
 End.
+
+
+
 
 
 
