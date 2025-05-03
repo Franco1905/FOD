@@ -62,7 +62,6 @@ Var
 Begin
   //inicializamos el minimo
   minimo.codLoc := valorAlto;
-
   For i := 1 To dimF Do
     Begin
       If (vr[i].codLoc < minimo.codLoc) Or (vr[i].codLoc = minimo
@@ -87,9 +86,9 @@ Var
   nom :   string;
 Begin
   // a todos los nombres logicos dentro del vector, les asigno un nombre fisico
-  nom := 'detalle';
   For i := 1 To dimF Do
     Begin
+      nom := 'detalle';
       str(i,ind);
       nom := nom + ind + '.dat';
       assign (vecDet[i],nom);
@@ -103,10 +102,7 @@ Procedure CargarVecReg (Var vecDet : vecDetalle; Var vecR : vecReg);
 Var 
   i :   integer;
 Begin
-  //writeln('Entrando CargarVecReg');
-  // ahora deberia "leer" cada registro
-  // en realidad, leo los 30 primeros registros de los detalle
-  For i := 1 To 30 Do
+  For i := 1 To dimf Do
     Begin
       //writeln('Antes de leer detalle: ',i);
       leer(vecDet[i],vecR[i]);
@@ -115,7 +111,6 @@ End;
 
 
 Procedure corteControl (Var mae: maestro;Var vecDet : vecDetalle);
-// corte control ideal para merge
 
 Var 
   min:   regDet;
@@ -123,42 +118,37 @@ Var
   vecR:   vecReg;
   i,cant : integer;
   clN1, clN2:  string;
-  ok : boolean;
-  // clN = Clave nivel 1, 2, 3, etc
-  // totN = valor que se este acumulando
 Begin
   Reset(mae);
   cant := 0;
-
   For i := 1 To dimF Do
     Begin
       Reset(vecDet[i]);
     End;
-  //valor que se acumula: fallecidos, recuperados, 
-  //el resto de valores se asignan directamente
 
   CargarVecReg(vecDet,vecR);
 
   minimoCorte(vecDet,vecR,min);
 
   read(mae,regM);
+
   While (min.codLoc <> valorAlto) Do
     Begin
 
-      While (min.codLoc <> regM.codLoc) Do
+      //Busco lugar en el mae
+
+      While Not(Eof(mae)) And ((min.codLoc <> regM.codLoc) Or
+            (min.codCep <> regM.codCep)) Do
         Begin
           Read(mae,regM);
           If (regM.casAct > 50) Then
             Begin
               cant := cant + 1;
-              ok := True;
-            End
-          Else
-            ok := False;
+            End;
         End;
 
-      //writeln('Clave Nivel 1:', reg.ord1);
-
+      If (Eof(mae)) Then
+        writeln('Se llego al final del maestro, debe haber un error!!');
       // guardo clave actual
       clN1 := min.codLoc;
       While (clN1 = min.codLoc) Do
@@ -170,27 +160,41 @@ Begin
               //sumo al tiempo total el tiempo del archivo detalle
               regM.casFall := regM.casFall + min.casFall;
               regM.casRec := regM.casRec + min.casRec;
-              act :=  min.casAct;
-              nue :=  min.casNue;
+              regM.casAct :=  min.casAct;
+              regM.casNue :=  min.casNue;
               // Busco el siguiente registro en el detalle
               minimoCorte(vecDet,vecR,min);
             End;
 
 
 
+
+
 { una vez se cambio de fecha (no necesariamente de usuario), 
           ya se puede asumir que sera otro registro del maestro}
-          If (ok = False) Then
-            cant := cant  + 1;
-          writeln('Cant = ',cant);
-          write(mae,regM);
-        End;
+          If (regM.casAct > 50) Then
+            cant := cant + 1;
 
+          writeln('Cant = ',cant);
+
+          seek(mae, filepos(mae) - 1);
+          write(mae,regM);
+          Read(mae,regM);
+        End;
     End;
   For i := 1 To dimF Do
     Begin
       close(vecDet[i]);
     End;
+
+  While Not(Eof(mae)) Do
+    Begin
+      If (regM.casAct > 50) Then
+        cant := cant + 1;
+      Read(mae,regM);
+    End;
+
+  Writeln('Cantidad de  localidades con mas de 50 casos activos: ',cant);
 
   close(mae);
 End;
@@ -288,6 +292,44 @@ Begin
   cargarDet(vecDet);
   corteControl(mae,vecDet);
 End.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
