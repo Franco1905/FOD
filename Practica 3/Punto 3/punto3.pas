@@ -126,7 +126,7 @@ begin
         
     seek(a, 0);
     read(a, reg);
-    reg.codigo := ind;
+    reg.codigo := ind * -1;
     write(a, reg);
     close(a);
 end; 
