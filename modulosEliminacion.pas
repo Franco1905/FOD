@@ -70,54 +70,47 @@ end.
 
 procedure Eliminar (var a : archivo;borrar : integer);
 var
-    reg : registro;
-    ind : integer;
+    reg,cabecera : novela;
 begin
     Reset(a);
-    read(a, reg);
+    read(a, cabecera);
     
-    ind := reg.codigo;
-
-    while (reg.codigo <> borrar) do
+    while (reg.codigo <> borrar) and not(Eof(a)) do
     begin
         read(a, reg);
     end;
 
-    seek(a,FilePos(a) -1);
-    reg.codigo := ind;
-    ind := FilePos(a) - 1;
-    write(a, reg);
-
-    // modificamos el codigo de la cabecera
+    if reg.codigo = borrar then
+        begin
+            seek(a,FilePos(a) -1);
+            reg.codigo := cabecera.codigo;
+            cabecera.codigo := FilePos(a) * -1;
+            write(a, reg);
+            
+            // 14 de julio cumple de francisco
+            // modificamos el codigo de la cabecera
         
-    seek(a, 0);
-    read(a, reg);
-    reg.codigo := ind * -1;
-    write(a, reg);
-    close(a);
+            seek(a, 0);
+            write(a, cabecera);
+            close(a);
+        end;
 end; 
 
-procedure alta (var a : archivo;nueReg : registro);
+procedure alta (var a : archivo;nueReg : novela);
 var
     ind : Integer;
-    reg : registro;
+    reg,cabecera : novela;
 begin
     reset(a);
-    read(a, reg);
+    read(a, cabecera);
     if reg.codigo <> 0 then
       begin
         // hay espacio libre, el codigo ya es negativo
-        ind := reg.codigo;
         // paso el indice a positivo para hacer el seek
-        seek(a, ind * -1);
-        read(a, reg);
-        seek(a,FilePos(a) - 1);
+        seek(a, cabecera.codigo * -1);
+        cabecera.codigo := FilePos(a) * -1;
         write(a, nueReg);
-        // ya es negativo, ya que el registro esta borrado logicamente
-        ind := reg.codigo;
         Seek(a, 0);
-        Read(a,reg);
-        reg.codigo := ind;
         Write(a,reg);
       end
     else
